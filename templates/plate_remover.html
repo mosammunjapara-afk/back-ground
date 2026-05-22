@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CARYANAMS — Auto Process</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  min-height: 100vh; padding: 24px 16px; color: #fff;
+}
+.wrap { max-width: 1080px; margin: 0 auto; }
+
+/* Header */
+.header { text-align:center; margin-bottom:30px; }
+.logo {
+  font-size:34px; font-weight:900; letter-spacing:4px;
+  background: linear-gradient(90deg, #ff6b35, #f7c948, #00d4ff);
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+.subtitle { color:#aaa; font-size:12px; margin-top:5px; letter-spacing:2px; }
+.tagline {
+  margin-top:10px; font-size:13px; color:#ccc;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius:20px; display:inline-block; padding:5px 18px;
+}
+
+/* Card */
+.card {
+  background: rgba(255,255,255,0.05); backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 28px;
+}
+
+/* Upload */
+.upload-area {
+  border: 2px dashed rgba(255,255,255,0.2); border-radius: 16px;
+  padding: 56px 24px; text-align: center; cursor: pointer; transition: all .3s;
+}
+.upload-area:hover, .upload-area.drag {
+  border-color: #ff6b35; background: rgba(255,107,53,0.06);
+}
+.upload-area input { display:none; }
+.upload-icon { font-size:56px; margin-bottom:14px; }
+.upload-title { font-size:20px; font-weight:700; margin-bottom:6px; }
+.upload-sub { color:#888; font-size:13px; }
+
+/* Steps banner */
+.steps-banner { display:flex; justify-content:center; gap:0; flex-wrap:wrap; margin:20px 0 0; }
+.step-pill {
+  display:flex; align-items:center; gap:6px; padding:8px 16px;
+  border-radius:30px; font-size:12px; font-weight:700;
+  background: rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1);
+  margin:4px; color:#aaa;
+}
+.step-pill .dot { width:8px; height:8px; border-radius:50%; background:#444; flex-shrink:0; }
+.step-pill.active { color:#f7c948; border-color:rgba(247,201,72,0.4); }
+.step-pill.active .dot { background:#f7c948; }
+.step-pill.done   { color:#00e676; border-color:rgba(0,230,118,0.4); }
+.step-pill.done   .dot { background:#00e676; }
+
+/* Editor */
+#editorArea { display:none; }
+
+/* Mode bar */
+.mode-bar { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; align-items:center; }
+.mode-lbl { font-size:11px; color:#666; margin-right:4px; }
+.mode-btn {
+  padding:8px 16px; border-radius:8px; border:1px solid rgba(255,255,255,0.18);
+  background:transparent; color:#ccc; font-size:12px; font-weight:600;
+  cursor:pointer; transition:all .2s;
+}
+.mode-btn:hover { border-color:#ff6b35; color:#ff6b35; }
+.mode-btn.active { background:#ff6b35; border-color:#ff6b35; color:#fff; }
+
+/* Preview grid */
+.preview-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:22px; }
+@media(max-width:600px){ .preview-grid{ grid-template-columns:1fr; } }
+
+.preview-box { background: rgba(0,0,0,0.25); border-radius:14px; overflow:hidden; }
+.preview-box h3 {
+  padding:10px 14px; font-size:11px; font-weight:700;
+  letter-spacing:2px; color:#777; border-bottom:1px solid rgba(255,255,255,0.07);
+}
+.preview-img-wrap {
+  min-height:380px; display:flex; align-items:stretch; justify-content:center;
+  position:relative; padding:0; overflow:hidden;
+  background: #111;
+}
+.preview-img-wrap.orig-bg { background:#111!important; }
+.preview-img-wrap img { width:100%; height:100%; min-height:380px; object-fit:cover; display:block; border-radius:0; }
+
+/* Canvas */
+#canvasWrap { position:relative; display:inline-block; user-select:none; }
+#plateCanvas { position:absolute; top:0; left:0; cursor:crosshair; }
+
+/* CTA Button */
+.cta-wrap { text-align:center; margin-bottom:20px; }
+.btn-cta {
+  padding:16px 48px; font-size:16px; font-weight:800;
+  border:none; border-radius:50px; cursor:pointer;
+  background: linear-gradient(135deg, #ff6b35 0%, #f7c948 50%, #ff6b35 100%);
+  background-size:200% 100%; color:#111; letter-spacing:0.5px;
+  transition:all .3s; display:inline-flex; align-items:center; gap:10px;
+  box-shadow:0 6px 30px rgba(255,107,53,0.4); min-width:280px; justify-content:center;
+}
+.btn-cta:hover:not(:disabled) {
+  transform:translateY(-3px); box-shadow:0 12px 42px rgba(255,107,53,0.55);
+  background-position:right center;
+}
+.btn-cta:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+.btn-cta .badge {
+  background:rgba(0,0,0,0.2); border-radius:20px;
+  font-size:10px; padding:2px 8px; letter-spacing:1px;
+}
+
+/* Secondary buttons */
+.btn-row { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+.btn {
+  padding:11px 22px; border:none; border-radius:10px;
+  font-size:13px; font-weight:700; cursor:pointer; transition:all .2s;
+  display:flex; align-items:center; gap:7px;
+}
+.btn:disabled { opacity:.4; cursor:not-allowed; }
+.btn-manual { background:rgba(255,176,32,.1); color:#ffb020; border:1px solid rgba(255,176,32,.3); }
+.btn-manual.active { background:rgba(255,176,32,.22); }
+.btn-sel { background:rgba(0,212,255,.1); color:#00d4ff; border:1px solid rgba(0,212,255,.3); display:none; }
+.btn-download { background:linear-gradient(135deg,#00e676,#00b0ff); color:#000; font-weight:800; display:none; }
+.btn-download:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,230,118,0.35); }
+.btn-ghost { background:rgba(255,255,255,.07); color:#aaa; border:1px solid rgba(255,255,255,.12); }
+.btn-ghost:hover:not(:disabled) { background:rgba(255,255,255,.14); color:#fff; }
+
+/* Manual hint */
+.manual-hint {
+  display:none; background:rgba(255,176,32,.08); border:1px solid rgba(255,176,32,.3);
+  border-radius:10px; padding:11px 16px; font-size:12px; color:#ffb020;
+  margin-bottom:16px; line-height:1.6;
+}
+.manual-hint.show { display:block; }
+
+/* Result banner */
+.result-banner {
+  display:none; background:linear-gradient(135deg,rgba(0,230,118,0.08),rgba(0,176,255,0.08));
+  border:1px solid rgba(0,230,118,0.3); border-radius:12px; padding:14px 20px;
+  margin-bottom:18px; font-size:13px; color:#00e676; line-height:1.9;
+}
+.result-banner.show { display:block; }
+.result-banner strong { color:#fff; }
+
+/* Progress */
+.progress-wrap { display:none; margin-top:16px; margin-bottom:8px; }
+.progress-wrap.show { display:block; }
+.progress-bar-bg { background:rgba(255,255,255,0.1); border-radius:10px; height:8px; overflow:hidden; }
+.progress-bar-fill {
+  height:100%; border-radius:10px;
+  background:linear-gradient(90deg, #ff6b35, #f7c948, #00d4ff);
+  width:0%; transition:width .5s ease;
+}
+.progress-label { font-size:11px; color:#777; text-align:center; margin-top:7px; letter-spacing:1px; }
+
+/* Status */
+.status { margin-top:16px; padding:13px 18px; border-radius:10px; font-size:13px; text-align:center; display:none; }
+.status.info    { background:rgba(0,212,255,.1); color:#00d4ff; border:1px solid rgba(0,212,255,.25); display:block; }
+.status.success { background:rgba(0,230,118,.1); color:#00e676; border:1px solid rgba(0,230,118,.25); display:block; }
+.status.error   { background:rgba(255,77,28,.1); color:#ff4d1c; border:1px solid rgba(255,77,28,.25); display:block; }
+
+/* Spinner */
+@keyframes spin { to{ transform:rotate(360deg); } }
+.spinner { width:16px; height:16px; border:2px solid rgba(0,0,0,0.2); border-top-color:#111; border-radius:50%; animation:spin .7s linear infinite; }
+
+.note { text-align:center; font-size:11px; color:#555; margin-top:14px; }
+
+/* Car Size Slider */
+.size-slider-wrap {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px; padding: 16px 20px; margin-bottom: 18px;
+}
+.size-slider-header {
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
+}
+.size-slider-label { font-size: 11px; font-weight: 700; color: #888; letter-spacing: 2px; }
+.size-value-badge {
+  font-size: 22px; font-weight: 900; color: #ff6b35;
+  min-width: 52px; text-align: right; line-height: 1;
+}
+.size-value-badge span { font-size: 12px; color: #888; font-weight: 600; }
+input[type=range]#carSizeSlider {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 6px; border-radius: 4px; outline: none; cursor: pointer;
+  background: linear-gradient(90deg, #ff6b35 0%, #f7c948 50%, #00d4ff 100%);
+}
+input[type=range]#carSizeSlider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
+  background: #fff; border: 3px solid #ff6b35;
+  box-shadow: 0 2px 10px rgba(255,107,53,0.5);
+  transition: transform .15s;
+}
+input[type=range]#carSizeSlider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+.size-slider-marks {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: #555; margin-top: 4px; padding: 0 2px;
+}
+.size-hint {
+  text-align: center; font-size: 11px; margin-top: 8px;
+  color: #888; min-height: 16px;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="logo">CARYANAMS</div>
+    <div class="subtitle">AUTO CAR IMAGE PROCESSOR</div>
+    <div class="tagline">🚗 Plate Remove + BG Remove + Showroom Floor — Ek Click Mein</div>
+  </div>
+
+  <div class="card">
+
+    <!-- Upload -->
+    <div class="upload-area" id="uploadArea">
+      <input type="file" id="fileInput" accept="image/*">
+      <div class="upload-icon">📸</div>
+      <div class="upload-title">Car Ka Photo Upload Karo</div>
+      <div class="upload-sub" style="margin-top:8px">Click ya Drag &amp; Drop · JPG / PNG / WEBP · Max 10MB</div>
+      <div class="steps-banner">
+        <div class="step-pill"><span class="dot"></span>Number Plate Remove</div>
+        <div class="step-pill"><span class="dot"></span>Background Remove</div>
+        <div class="step-pill"><span class="dot"></span>Showroom Floor Apply</div>
+      </div>
+    </div>
+
+    <!-- Editor -->
+    <div id="editorArea">
+
+      <!-- Live step tracker -->
+      <div class="steps-banner" id="stepsTracker" style="margin-bottom:20px">
+        <div class="step-pill" id="sp1"><span class="dot"></span>Plate Remove</div>
+        <div class="step-pill" id="sp2"><span class="dot"></span>BG Remove</div>
+        <div class="step-pill" id="sp3"><span class="dot"></span>Showroom BG</div>
+      </div>
+
+      <!-- Car Size Slider -->
+      <div class="size-slider-wrap">
+        <div class="size-slider-header">
+          <span class="size-slider-label">📐 CAR SIZE (CANVAS WIDTH)</span>
+          <div class="size-value-badge" id="sliderValueBadge">90<span>%</span></div>
+        </div>
+        <input type="range" id="carSizeSlider" min="30" max="100" value="90" step="1"
+               oninput="updateSliderUI(this.value)">
+        <div class="size-slider-marks">
+          <span>30% 🚗 Choti</span>
+          <span>50%</span>
+          <span>75%</span>
+          <span>90% Default</span>
+          <span>100% 🚐 Badi</span>
+        </div>
+        <div class="size-hint" id="sizeHint">🚐 Badi car — Fortuner / Innova</div>
+      </div>
+
+      <!-- Mode bar -->
+      <div class="mode-bar" id="modeBar">
+        <span class="mode-lbl">PLATE COVER:</span>
+        <button class="mode-btn" data-mode="blur">🌫️ Blur</button>
+        <button class="mode-btn" data-mode="white">⬜ White</button>
+        <button class="mode-btn" data-mode="black">⬛ Black</button>
+        <button class="mode-btn active" data-mode="caryanams">🏷️ Caryanams Logo</button>
+      </div>
+
+      <!-- Manual hint -->
+      <div class="manual-hint" id="manualHint">
+        ✏️ <strong>Manual Mode:</strong> Original image pe plate ke upar box draw karo, phir
+        <strong>"Process Selected"</strong> button dabao. Sab kuch ek saath process hoga.
+      </div>
+
+      <!-- Result banner -->
+      <div class="result-banner" id="resultBanner"></div>
+
+      <!-- Preview grid -->
+      <div class="preview-grid">
+        <div class="preview-box">
+          <h3>📷 ORIGINAL</h3>
+          <div class="preview-img-wrap orig-bg">
+            <div id="canvasWrap">
+              <img id="originalImg" alt="original" draggable="false">
+              <canvas id="plateCanvas"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="preview-box">
+          <h3>✨ PROCESSED — SHOWROOM FLOOR</h3>
+          <div class="preview-img-wrap">
+            <img id="processedImg" alt="result" style="display:none;">
+            <div id="procPlaceholder" style="color:#555;font-size:12px;padding:40px;text-align:center">
+              ⏳ Final result yahan aayega<br>
+              <span style="font-size:10px;color:#444;margin-top:8px;display:block">
+                Plate Removed • Background Removed • Showroom Floor BG
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+        <div class="progress-label" id="progressLabel">Processing...</div>
+      </div>
+
+      <!-- Main CTA -->
+      <div class="cta-wrap">
+        <button class="btn-cta" id="processBtn" onclick="doProcessAll(null)">
+          ⚡ Auto Process Car
+          <span class="badge">1-CLICK</span>
+        </button>
+      </div>
+
+      <!-- Secondary -->
+      <div class="btn-row">
+        <button class="btn btn-manual" id="manualToggle" onclick="toggleManual()">✏️ Manual Plate Select</button>
+        <button class="btn btn-sel" id="removeSelBtn" onclick="doProcessWithManual()">🎯 Process Selected Area</button>
+        <button class="btn btn-download" id="downloadBtn" onclick="doDownload()">⬇️ HD Download PNG</button>
+        <button class="btn btn-ghost" onclick="resetAll()">↺ New Photo</button>
+        <button class="btn" style="background:rgba(247,201,72,.1);color:#f7c948;border:1px solid rgba(247,201,72,.3)" onclick="window.open('/gallery','_blank')">🖼️ Gallery</button>
+      </div>
+
+      <div class="status" id="statusBox"></div>
+      <div class="note">⚡ Number plate auto-detect · Background transparent · Showroom floor BG auto-apply · PNG download</div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let carId=null, curMode="caryanams", manualMode=false, processing=false;
+let drawing=false, startX=0, startY=0, rect={x:0,y:0,w:0,h:0}, hasRect=false;
+let scaleX=1, scaleY=1;
+
+const uploadArea  = document.getElementById('uploadArea');
+const fileInput   = document.getElementById('fileInput');
+const editorArea  = document.getElementById('editorArea');
+const origImg     = document.getElementById('originalImg');
+const procImg     = document.getElementById('processedImg');
+const procPH      = document.getElementById('procPlaceholder');
+const canvas      = document.getElementById('plateCanvas');
+const ctx         = canvas.getContext('2d');
+const processBtn  = document.getElementById('processBtn');
+const downloadBtn = document.getElementById('downloadBtn');
+const removeSelBtn= document.getElementById('removeSelBtn');
+const manualToggle= document.getElementById('manualToggle');
+const statusBox   = document.getElementById('statusBox');
+const manualHint  = document.getElementById('manualHint');
+const resultBanner= document.getElementById('resultBanner');
+const progressWrap= document.getElementById('progressWrap');
+const progressFill= document.getElementById('progressFill');
+const progressLabel=document.getElementById('progressLabel');
+const sp1=document.getElementById('sp1');
+const sp2=document.getElementById('sp2');
+const sp3=document.getElementById('sp3');
+
+// Upload
+uploadArea.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => { if(e.target.files[0]) handleFile(e.target.files[0]); });
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault(); uploadArea.classList.remove('drag');
+  if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+async function handleFile(file) {
+  if (file.size > 10*1024*1024) { alert('File 10MB se zyada hai!'); return; }
+  showStatus('Uploading...','info');
+  const fd = new FormData(); fd.append('file', file);
+  try {
+    const r = await fetch('/api/upload-car', {method:'POST', body:fd});
+    const data = await r.json();
+    if (!data.success) { showStatus('Upload failed: '+data.error,'error'); return; }
+    carId = data.id;
+    origImg.src = data.original_url;
+    origImg.onload = () => { setupCanvas(); autoDetectSilent(); };
+    uploadArea.style.display='none'; editorArea.style.display='block';
+    resetSteps();
+    showStatus('✅ Photo ready! "Auto Process Car" dabao — ek click mein sab ho jaayega.','success');
+  } catch(e) { showStatus('Upload error: '+e.message,'error'); }
+}
+
+function setupCanvas() {
+  const dw=origImg.offsetWidth, dh=origImg.offsetHeight;
+  canvas.width=dw; canvas.height=dh;
+  canvas.style.width=dw+'px'; canvas.style.height=dh+'px';
+  scaleX=origImg.naturalWidth/dw; scaleY=origImg.naturalHeight/dh;
+  canvas.style.pointerEvents='none';
+}
+
+document.getElementById('modeBar').addEventListener('click', e => {
+  const btn=e.target.closest('.mode-btn'); if(!btn) return;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); curMode=btn.dataset.mode;
+});
+
+// Canvas drawing
+canvas.addEventListener('mousedown', e => {
+  if(!manualMode) return; drawing=true;
+  const p=getPos(e); startX=p.x; startY=p.y; hasRect=false; removeSelBtn.style.display='none';
+});
+canvas.addEventListener('mousemove', e => {
+  if(!drawing||!manualMode) return;
+  const p=getPos(e);
+  rect={x:Math.min(startX,p.x),y:Math.min(startY,p.y),w:Math.abs(p.x-startX),h:Math.abs(p.y-startY)};
+  drawRect(rect,'#ffb020');
+});
+canvas.addEventListener('mouseup', e => {
+  if(!drawing||!manualMode) return; drawing=false;
+  if(rect.w>10&&rect.h>5){ hasRect=true; removeSelBtn.style.display='flex'; drawRect(rect,'#00d4ff'); }
+});
+canvas.addEventListener('touchstart',e=>{if(!manualMode)return;e.preventDefault();const t=e.touches[0];canvas.dispatchEvent(new MouseEvent('mousedown',{clientX:t.clientX,clientY:t.clientY}));},{passive:false});
+canvas.addEventListener('touchmove',e=>{e.preventDefault();const t=e.touches[0];canvas.dispatchEvent(new MouseEvent('mousemove',{clientX:t.clientX,clientY:t.clientY}));},{passive:false});
+canvas.addEventListener('touchend',e=>{e.preventDefault();canvas.dispatchEvent(new MouseEvent('mouseup',{}));},{passive:false});
+
+function getPos(e){ const r=canvas.getBoundingClientRect(); return{x:e.clientX-r.left,y:e.clientY-r.top}; }
+function drawRect(r,color){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle=color; ctx.lineWidth=2; ctx.setLineDash([5,4]);
+  ctx.strokeRect(r.x,r.y,r.w,r.h);
+  ctx.fillStyle='rgba(0,212,255,0.07)'; ctx.fillRect(r.x,r.y,r.w,r.h);
+}
+function drawDetectedRect(x,y,w,h){
+  const cx=x/scaleX,cy=y/scaleY,cw=w/scaleX,ch=h/scaleY;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle='#00e676'; ctx.lineWidth=2; ctx.setLineDash([6,4]);
+  ctx.strokeRect(cx,cy,cw,ch);
+  ctx.fillStyle='rgba(0,230,118,0.07)'; ctx.fillRect(cx,cy,cw,ch);
+}
+
+async function autoDetectSilent(){
+  if(!carId) return;
+  try{
+    const r=await fetch(`/api/detect-plate/${carId}`);
+    const d=await r.json();
+    if(d.detected) drawDetectedRect(d.x,d.y,d.width,d.height);
+  }catch(e){}
+}
+
+// Steps
+function resetSteps(){ [sp1,sp2,sp3].forEach(s=>s.className='step-pill'); }
+function setStep(n,state){ [sp1,sp2,sp3][n-1].className='step-pill '+state; }
+function setProgress(pct,label){
+  progressWrap.classList.add('show');
+  progressFill.style.width=pct+'%';
+  progressLabel.textContent=label;
+}
+
+// ONE-CLICK PROCESS
+async function doProcessAll(manualBox){
+  if(!carId||processing) return;
+  processing=true;
+  processBtn.disabled=true;
+  processBtn.innerHTML='<div class="spinner"></div> Processing...';
+  resultBanner.classList.remove('show');
+  statusBox.style.display='none';
+  resetSteps();
+
+  setStep(1,'active'); setProgress(10,'Step 1: Number plate detect & remove...');
+  await sleep(400);
+  setStep(2,'active'); setProgress(38,'Step 2: Background remove (rembg)...');
+  await sleep(300);
+  setStep(3,'active'); setProgress(68,'Step 3: Showroom floor background apply...');
+
+  try{
+    const carSizePct = parseInt(document.getElementById('carSizeSlider').value);
+    console.log('[size] Sending car_size_pct =', carSizePct);
+    const body={mode:curMode, car_size_pct: carSizePct};
+    if(manualBox) body.manual=manualBox;
+
+    const r=await fetch(`/api/process-car/${carId}`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+    const data=await r.json();
+    setProgress(100,'Almost done...');
+
+    if(data.success){
+      setStep(1,'done'); setStep(2,'done'); setStep(3,'done');
+      await sleep(300);
+      procImg.src=data.processed_url+'?t='+Date.now();
+      procImg.style.display='block'; procPH.style.display='none';
+      downloadBtn.style.display='flex';
+      progressWrap.classList.remove('show');
+
+      let html='✅ <strong>Processing Complete!</strong><br>';
+      if(data.plate) html+=`🔲 Plate removed at (${data.plate.x},${data.plate.y}) — ${data.plate.width}×${data.plate.height}px<br>`;
+      else html+='🔲 Plate remove attempt complete<br>';
+      html+='🖼️ Background removed (transparent)<br>';
+      html+='🏢 Showroom floor background applied — PNG ready!';
+      resultBanner.innerHTML=html; resultBanner.classList.add('show');
+      if(data.plate) drawDetectedRect(data.plate.x,data.plate.y,data.plate.width,data.plate.height);
+    } else {
+      resetSteps(); progressWrap.classList.remove('show');
+      showStatus('❌ '+data.message+' — Manual select try karo.','error');
+      enableManual();
+    }
+  } catch(e){
+    progressWrap.classList.remove('show');
+    showStatus('❌ Error: '+e.message,'error');
+  } finally {
+    processing=false; processBtn.disabled=false;
+    processBtn.innerHTML='⚡ Auto Process Car <span class="badge">1-CLICK</span>';
+  }
+}
+
+async function doProcessWithManual(){
+  if(!hasRect||!carId) return;
+  const manual={
+    x:Math.round(rect.x*scaleX), y:Math.round(rect.y*scaleY),
+    w:Math.round(rect.w*scaleX), h:Math.round(rect.h*scaleY)
+  };
+  disableManual();
+  await doProcessAll(manual);
+}
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+function toggleManual(){ if(manualMode) disableManual(); else enableManual(); }
+function enableManual(){
+  manualMode=true; canvas.style.pointerEvents='auto';
+  manualToggle.classList.add('active'); manualHint.classList.add('show');
+  ctx.clearRect(0,0,canvas.width,canvas.height); hasRect=false; removeSelBtn.style.display='none';
+}
+function disableManual(){
+  manualMode=false; canvas.style.pointerEvents='none';
+  manualToggle.classList.remove('active'); manualHint.classList.remove('show');
+  removeSelBtn.style.display='none';
+}
+
+function doDownload(){ if(carId) window.location.href=`/api/download/${carId}`; }
+
+function resetAll(){
+  carId=null; manualMode=false; hasRect=false; processing=false;
+  uploadArea.style.display='block'; editorArea.style.display='none';
+  origImg.src=''; procImg.src=''; procImg.style.display='none'; procPH.style.display='block';
+  downloadBtn.style.display='none'; removeSelBtn.style.display='none';
+  statusBox.style.display='none'; resultBanner.classList.remove('show');
+  manualHint.classList.remove('show'); progressWrap.classList.remove('show');
+  fileInput.value=''; ctx.clearRect(0,0,canvas.width,canvas.height); resetSteps();
+}
+
+function updateSliderUI(val) {
+  val = parseInt(val);
+  document.getElementById("sliderValueBadge").innerHTML = val + "<span>%</span>";
+  let hint = "";
+  if      (val <= 40) hint = "🚗 Bahut choti car";
+  else if (val <= 55) hint = "🚗 Choti car — hatchback style";
+  else if (val <= 70) hint = "🚙 Medium size car";
+  else if (val <= 82) hint = "🚙 SUV / Sedan size";
+  else if (val <= 92) hint = "🚐 Badi car — Fortuner / Innova";
+  else                hint = "🚐 Maximum size — full canvas fill!";
+  document.getElementById("sizeHint").textContent = hint;
+}
+updateSliderUI(90);
+
+function showStatus(msg,type){
+  statusBox.className='status '+type; statusBox.innerHTML=msg;
+  if(type!=='info') setTimeout(()=>{ if(statusBox.innerHTML===msg) statusBox.style.display='none'; },7000);
+}
+</script>
+</body>
+</html>
