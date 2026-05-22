@@ -3,10 +3,10 @@ Flask-SQLAlchemy==3.1.1
 Flask-Cors==4.0.1
 
 numpy==1.26.4
-opencv-python==4.10.0.84
+opencv-python-headless==4.10.0.84
 Pillow==10.4.0
-rembg==2.0.57
 
+rembg==2.0.67
 onnxruntime==1.18.1
 
 scipy==1.13.1
