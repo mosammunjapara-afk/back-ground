@@ -1,0 +1,5 @@
+flask==3.0.0
+flask-sqlalchemy==3.1.1
+Pillow==10.4.0
+rembg==2.0.57
+onnxruntime==1.18.0
